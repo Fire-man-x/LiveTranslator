@@ -170,9 +170,13 @@ div.TranslationPanel-stringVariant textarea.disabled {
 }
 
 #TranslationPanel-status {
+	float: left;
+	display: block;
+	padding: 4px 0;
+	text-align: left;
 }
 
-#TranslationPanel-status textarea {
+#TranslationPanel-originalText textarea {
 	background-color: #fff;
 	width: {$panel->getLayout() == 'vertical' ? '100% !important' : '532px'|noescape};
 	height: 40px;
@@ -449,7 +453,7 @@ var translationPanel = {
 			this.select();
 		};
 		textarea.textContent = this.escape(string);
-		this.setStatus(textarea);
+		this.setOriginalText(textarea);
 	},
 
 	erase: function (span) {
@@ -520,6 +524,7 @@ var translationPanel = {
 			textarea.disabled = true;
 			textarea.className = 'disabled';
 		}
+		this.setOriginalText(null);
 	},
 
 	save: function () {
@@ -594,16 +599,17 @@ var translationPanel = {
 
 	setStatus: function (text) {
 		var status = document.getElementById('TranslationPanel-status');
-		if (typeof text == 'object'){
-			while (status.hasChildNodes()) {
-				status.removeChild(status.lastChild);
-			}
-			status.appendChild(text);
+		status.innerHTML = text ? text : '';
+	},
+
+	setOriginalText: function (node) {
+		var originalText = document.getElementById('TranslationPanel-originalText');
+		while (originalText.hasChildNodes()) {
+			originalText.removeChild(originalText.lastChild);
 		}
-		else if (text)
-			status.innerHTML = text;
-		else
-			status.innerHTML = '';
+		if (node) {
+			originalText.appendChild(node);
+		}
 	},
 
 	escape: function (string) {
@@ -639,13 +645,14 @@ translationPanel.init();
 			</div>
 
 			<div id="TranslationPanel-editor">
-				<div id="TranslationPanel-status">Initializing&hellip;</div>
+				<div id="TranslationPanel-originalText"></div>
 				{var $variants = range(0, $translator->getVariantsCount() -1)}
 				<div class="TranslationPanel-stringVariant" n:foreach="$variants as $i => $variant">
 					<label for="TranslationPanel-stringVariant_{$i}">{if $i > 0}{$i}<sup>{$i|ordinal}</sup> plural{else}Singular{/if}:</label>
 					<textarea id="TranslationPanel-stringVariant_{$i}" rows="4" cols="40"></textarea>
 				</div>
 				<div id="TranslationPanel-tools">
+					<div id="TranslationPanel-status">Initializing&hellip;</div>
 					<input type="button" value="Save" class="save" id="TranslationPanel-save" />
 				</div>
 			</div>
