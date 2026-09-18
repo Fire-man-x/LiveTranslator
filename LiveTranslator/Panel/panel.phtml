@@ -1,6 +1,13 @@
 ﻿<style type="text/css">
 #TranslationPanel {
 	width: 100%;
+	box-sizing: border-box;
+	padding: 2px;
+}
+
+.tracy-inner:has(#TranslationPanel),
+.tracy-inner-container:has(#TranslationPanel) {
+	height: 100%;
 }
 
 #TranslationPanel-availableLangs {
@@ -12,8 +19,7 @@
 }
 
 .tracy-inner #TranslationPanel {
-	max-width: 800px !important;
-	height: {$panel->getHeight() - 20|noescape}px;
+	height: 100%;
 }
 
 #TranslationPanel-sidebar {
@@ -21,15 +27,20 @@
 	height: 100%;
 	overflow: hidden;
 	float: left;
+	box-sizing: border-box;
+	display: flex;
+	flex-direction: column;
 }
 
 #TranslationPanel-strings {
-	height: {$panel->getHeight() - 53|noescape}px;
+	flex: 1 1 auto;
+	min-height: 0;
 	overflow: auto;
 	border: 1px solid #AAA;
 }
 
 #TranslationPanel-filter {
+	flex: 0 0 auto;
 	padding: 3px 3px 3px 21px;
 	border: 1px solid #AAA;
 	margin-bottom: 2px;
@@ -50,7 +61,7 @@
 
 #TranslationPanel div.TranslationPanel-string {
 	border-bottom: 1px solid #DDD;
-	padding: 0.3ex 1ex;
+	padding: 0.3ex 2ex 0.3ex 1ex;
 	background-color: #E6EFC2;
 }
 
@@ -77,16 +88,17 @@
 	cursor: default;
 }
 
-#TranslationPanel div.TranslationPanel-string.modified, #TranslationPanel div.TranslationPanel-string.erased-string {
-	background-image: url("data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAABAAAAAQCAYAAAAf8/9hAAAAGXRFWHRTb2Z0d2FyZQBBZG9iZSBJbWFnZVJlYWR5ccllPAAAAT9JREFUeNpi/P//PwMlgImBQkCxAQwgLyBjdPBqvsV/fHrwGvBmqc2U/x9m/QfRZBnw5Xg+UOjjfxCNywAWdOe9Xmi16P/f37EMDH8ZuDS9GP692w2mX807DDSEmYGRmXUxUFkcTD2GAd/+MkpL+9YxMHPxMfx5d5Th/9ebDIzc6gyiUTMY/nx4zvBsW5c0snpGdGczMjKqXJxoNFHZRMmLTVKL4d+3ewxMXEoMPx+dY7h7+tE2g9JLIH/dwWcAiFL4eqrwPrMAK8Pfj/cYmAXVGX6/ecfAazFdESj3AFkP1nTwZoVXORMXG8PXCycYbh24u+7rucMMLHzCDK8WWJYTlQ7erPT6/3yuxccoO3FPIFc+yk7M8/kC+49vlrv+R9eDywvGQPwHiK8D8S8gZgNiTWign0XWwzj0MxNAgAEA2MzWr2VXRDEAAAAASUVORK5CYII=");
-	background-position: 99% 50%;
-	background-repeat: no-repeat;
-}
-
 #TranslationPanel div.TranslationPanel-string span.do-erase {
 	color: #a40000;
 	cursor: pointer;
 	float: right;
+}
+
+#TranslationPanel div.TranslationPanel-string span.do-erase.erased {
+	width: 16px;
+	height: 16px;
+	background-image: url("data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAABAAAAAQCAYAAAAf8/9hAAAAGXRFWHRTb2Z0d2FyZQBBZG9iZSBJbWFnZVJlYWR5ccllPAAAAT9JREFUeNpi/P//PwMlgImBQkCxAQwgLyBjdPBqvsV/fHrwGvBmqc2U/x9m/QfRZBnw5Xg+UOjjfxCNywAWdOe9Xmi16P/f37EMDH8ZuDS9GP692w2mX807DDSEmYGRmXUxUFkcTD2GAd/+MkpL+9YxMHPxMfx5d5Th/9ebDIzc6gyiUTMY/nx4zvBsW5c0snpGdGczMjKqXJxoNFHZRMmLTVKL4d+3ewxMXEoMPx+dY7h7+tE2g9JLIH/dwWcAiFL4eqrwPrMAK8Pfj/cYmAXVGX6/ecfAazFdESj3AFkP1nTwZoVXORMXG8PXCycYbh24u+7rucMMLHzCDK8WWJYTlQ7erPT6/3yuxccoO3FPIFc+yk7M8/kC+49vlrv+R9eDywvGQPwHiK8D8S8gZgNiTWign0XWwzj0MxNAgAEA2MzWr2VXRDEAAAAASUVORK5CYII=");
+	background-repeat: no-repeat;
 }
 
 #TranslationPanel-editor {
@@ -114,7 +126,7 @@
 }
 
 div.TranslationPanel-stringVariant textarea {
-	width: 95% !important;
+	width: 100%;
 	height: 70%;
 	background-color: #fff;
 	border: 1px solid #bbb !important;
@@ -158,10 +170,6 @@ div.TranslationPanel-stringVariant textarea.disabled {
 }
 
 #TranslationPanel-status {
-	float: left;
-	display: block;
-	padding: 4px 0;
-	text-align: left;
 }
 
 #TranslationPanel-status textarea {
@@ -450,14 +458,42 @@ var translationPanel = {
 
 		this.erasedStrings.push(a.title);
 		div.className += ' erased-string';
-		div.removeChild(span);
 		a.onclick = null;
 		if (this.currentString == a.title){
 			this.disable();
 		}
 
+		span.className += ' erased';
+		span.title = 'cancel erasing';
+		span.innerHTML = '';
+		span.onclick = function () {
+			translationPanel.unerase(this);
+		};
+
 		document.getElementById('TranslationPanel-save').disabled = false;
 		document.getElementById('TranslationPanel-save').className = 'save';
+	},
+
+	unerase: function (span) {
+		var div = span.parentNode;
+		var a = div.firstChild;
+
+		var index = this.erasedStrings.indexOf(a.title);
+		if (index > -1) {
+			this.erasedStrings.splice(index, 1);
+		}
+
+		div.className = div.className.replace(/\s*\berased-string\b/, '');
+		a.onclick = function () {
+			translationPanel.edit(this);
+		};
+
+		span.className = 'do-erase';
+		span.title = 'erase translation';
+		span.innerHTML = '&times;';
+		span.onclick = function () {
+			translationPanel.erase(this);
+		};
 	},
 
 	fillIn: function (stringData) {
@@ -599,18 +635,17 @@ translationPanel.init();
 					<input type="text" class="text" id="TranslationPanel-filterBox" />
 					<div id="TranslationPanel-filterReset"></div>
 				</div>
-				<div id="TranslationPanel-strings">
-				</div>
+				<div id="TranslationPanel-strings"></div>
 			</div>
 
 			<div id="TranslationPanel-editor">
+				<div id="TranslationPanel-status">Initializing&hellip;</div>
 				{var $variants = range(0, $translator->getVariantsCount() -1)}
 				<div class="TranslationPanel-stringVariant" n:foreach="$variants as $i => $variant">
 					<label for="TranslationPanel-stringVariant_{$i}">{if $i > 0}{$i}<sup>{$i|ordinal}</sup> plural{else}Singular{/if}:</label>
 					<textarea id="TranslationPanel-stringVariant_{$i}" rows="4" cols="40"></textarea>
 				</div>
 				<div id="TranslationPanel-tools">
-					<span id="TranslationPanel-status">Initializing&hellip;</span>
 					<input type="button" value="Save" class="save" id="TranslationPanel-save" />
 				</div>
 			</div>

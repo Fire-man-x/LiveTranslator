@@ -152,6 +152,9 @@ class File implements \LiveTranslator\ITranslatorStorage
 				}
 
 				foreach ($originals as $original) {
+					if (false === $this->newTranslations[$original]) {
+						continue;
+					}
 					$new = array($original) + $this->newTranslations[$original];
 					ksort($new);
 					$data[] = serialize($new) . "\n";
