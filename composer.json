@@ -21,9 +21,9 @@
 		"classmap": ["LiveTranslator"]
 	},
 	"require": {
-		"nette/nette": "~2.2"
+        "php": "~8.3",
+		"nette/nette": "~3.2"
 	},
-	"minimum-stability": "RC",
     "require-dev": {
         "nette/tester": "@dev"
     }

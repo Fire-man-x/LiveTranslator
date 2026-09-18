@@ -1,10 +1,6 @@
-<style type="text/css">
+﻿<style type="text/css">
 #TranslationPanel {
-	min-width: 600px;
-}
-
-#TranslationPanel h1 {
-	float: none;
+	width: 100%;
 }
 
 #TranslationPanel-availableLangs {
@@ -15,22 +11,20 @@
     margin: 7px 30px 0 0;
 }
 
-#TranslationPanel .nette-inner {
+.tracy-inner #TranslationPanel {
 	max-width: 800px !important;
-	height: {$panel->height|noescape}px;
-	padding: 1px;
+	height: {$panel->getHeight() - 20|noescape}px;
 }
 
 #TranslationPanel-sidebar {
-	width: {$panel->layout == 'vertical' ? '40%' : '30%'|noescape};
+	width: {$panel->getLayout() == 'vertical' ? '40%' : '30%'|noescape} !important;
 	height: 100%;
 	overflow: hidden;
 	float: left;
-	margin: -1px 0 -1px -1px;
 }
 
 #TranslationPanel-strings {
-	height: {$panel->height - 38|noescape}px;
+	height: {$panel->getHeight() - 53|noescape}px;
 	overflow: auto;
 	border: 1px solid #AAA;
 }
@@ -96,16 +90,15 @@
 }
 
 #TranslationPanel-editor {
-	width: {$panel->layout == 'vertical' ? '58%' : '68%'|noescape};
-	height: 100%;
-	margin: -1px -1px -1px 0;
+	width: {$panel->getLayout() == 'vertical' ? '58%' : '68%'|noescape} !important;
+	height: 100% !important;
 	float: right;
 	position: relative;
 }
 
 #TranslationPanel div.TranslationPanel-stringVariant {
 	height: 127px;
-{if $panel->layout == 'horizontal'}
+{if $panel->getLayout() == 'horizontal'}
 	width: 50%;
 	float: left;
 {/if}
@@ -121,7 +114,7 @@
 }
 
 div.TranslationPanel-stringVariant textarea {
-	width: 95%;
+	width: 95% !important;
 	height: 70%;
 	background-color: #fff;
 	border: 1px solid #bbb !important;
@@ -134,9 +127,9 @@ div.TranslationPanel-stringVariant textarea.disabled {
 
 #TranslationPanel-tools {
 	position: absolute;
-	bottom: -1px;
+	bottom: 0px;
 	right: 0px;
-	width: 98%;
+	width: 100% !important;
 	background-color: #EDEAE0;
 	padding: 1ex;
 	text-align: right;
@@ -173,7 +166,7 @@ div.TranslationPanel-stringVariant textarea.disabled {
 
 #TranslationPanel-status textarea {
 	background-color: #fff;
-	width: {$panel->layout == 'vertical' ? '340px' : '532px'|noescape};
+	width: {$panel->getLayout() == 'vertical' ? '100% !important' : '532px'|noescape};
 	height: 40px;
 }
 
@@ -400,7 +393,7 @@ var translationPanel = {
 				if (translated == 0) {
 					div.className += ' untranslated';
 				}
-				else {
+				//else {
 					var span = document.createElement('span');
 					span.className = 'do-erase';
 					span.title = 'erase translation';
@@ -409,7 +402,7 @@ var translationPanel = {
 						translationPanel.erase(this);
 					};
 					div.appendChild(span);
-				}
+				//}
 
 				this.listElements[i] = div;
 			}
@@ -539,7 +532,7 @@ var translationPanel = {
 			if (xmlHttp.readyState == 4) {
 				if (xmlHttp.status == 200) {
 					for (var i in translationPanel.erasedStrings) {
-						translationPanel.strings[translationPanel.erasedStrings[i]] = false;
+						delete translationPanel.strings[translationPanel.erasedStrings[i]];
 					}
 					translationPanel.updatedStrings = [];
 					translationPanel.erasedStrings = [];
@@ -557,7 +550,7 @@ var translationPanel = {
 				}
 			}
 		};
-		xmlHttp.open("POST", window.location, true);
+		xmlHttp.open("POST", window.location.href, true);
 		xmlHttp.setRequestHeader({$panel::XHR_HEADER}, 'devel');
 		xmlHttp.setRequestHeader('X-Requested-With', 'XMLHttpRequest');
 		xmlHttp.send(JSON.stringify(data));
@@ -586,36 +579,40 @@ var translationPanel = {
 	},
 };
 
+translationPanel.init();
+
 /* ]]> */
 </script>
 
-<div id="TranslationPanel">
-	<h1>
-        Translations ({$lang|upper})
-        <span id="TranslationPanel-availableLangs" n:if="$availableLangs" n:inner-foreach="$availableLangs as $i => $availableLang">
-            <a href="{$panel->getLink($availableLang)}">{$availableLang|upper}</a>{sep} | {/sep}
-        </span>
-    </h1>
+<h1>
+	Translations ({$lang|upper})
+	<span id="TranslationPanel-availableLangs" n:if="$availableLangs" n:inner-foreach="$availableLangs as $i => $availableLang">
+		<a href="{$panel->getLink($availableLang)}">{$availableLang|upper}</a>{sep} | {/sep}
+	</span>
+</h1>
 
-	<div class="nette-inner">
-		<div id="TranslationPanel-sidebar">
-			<div id="TranslationPanel-filter">
-				<input type="text" class="text" id="TranslationPanel-filterBox" />
-				<div id="TranslationPanel-filterReset"></div>
+<div class="tracy-inner">
+	<div class="tracy-inner-container">
+		<div id="TranslationPanel">
+			<div id="TranslationPanel-sidebar">
+				<div id="TranslationPanel-filter">
+					<input type="text" class="text" id="TranslationPanel-filterBox" />
+					<div id="TranslationPanel-filterReset"></div>
+				</div>
+				<div id="TranslationPanel-strings">
+				</div>
 			</div>
-			<div id="TranslationPanel-strings">
-			</div>
-		</div>
 
-		<div id="TranslationPanel-editor">
-			{var $variants = range(0, $translator->getVariantsCount() -1)}
-			<div class="TranslationPanel-stringVariant" n:foreach="$variants as $i => $variant">
-				<label for="TranslationPanel-stringVariant_{$i}">{if $i > 0}{$i}<sup>{$i|ordinal}</sup> plural{else}Singular{/if}:</label>
-				<textarea id="TranslationPanel-stringVariant_{$i}" rows="4" cols="40"></textarea>
-			</div>
-			<div id="TranslationPanel-tools">
-				<span id="TranslationPanel-status">Initializing&hellip;</span>
-				<input type="button" value="Save" class="save" id="TranslationPanel-save" />
+			<div id="TranslationPanel-editor">
+				{var $variants = range(0, $translator->getVariantsCount() -1)}
+				<div class="TranslationPanel-stringVariant" n:foreach="$variants as $i => $variant">
+					<label for="TranslationPanel-stringVariant_{$i}">{if $i > 0}{$i}<sup>{$i|ordinal}</sup> plural{else}Singular{/if}:</label>
+					<textarea id="TranslationPanel-stringVariant_{$i}" rows="4" cols="40"></textarea>
+				</div>
+				<div id="TranslationPanel-tools">
+					<span id="TranslationPanel-status">Initializing&hellip;</span>
+					<input type="button" value="Save" class="save" id="TranslationPanel-save" />
+				</div>
 			</div>
 		</div>
 	</div>

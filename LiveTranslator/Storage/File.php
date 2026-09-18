@@ -1,4 +1,5 @@
 <?php
+declare(strict_types=1);
 
 namespace LiveTranslator\Storage;
 
@@ -6,44 +7,35 @@ namespace LiveTranslator\Storage;
 class File implements \LiveTranslator\ITranslatorStorage
 {
 
-	/** @var string */
-	protected $storageDir;
+	protected string $storageDir;
 
 	/** @var resource[] */
 	protected $handlers = array();
 
-	/** @var array */
-	private $newTranslations = array();
+	private array $newTranslations = array();
 
-	/** @var array */
-	private $metaData = array();
+	private array $metaData = array();
 
 
 	/**
-	 * @param string $storageDir
 	 * @throws \Nette\DirectoryNotFoundException
 	 */
-	public function __construct($storageDir)
+	public function __construct(string $storageDir)
 	{
-		$this->storageDir = realpath($storageDir);
+		$realStorageDir = realpath($storageDir);
 
-		if (FALSE === $this->storageDir) {
+		if (false === $realStorageDir) {
 			throw new \Nette\DirectoryNotFoundException("Directory $storageDir was not found.");
 		}
+
+		$this->storageDir = $realStorageDir;
 	}
 
 
-	/**
-	 * @param string $original
-	 * @param string $lang
-	 * @param int $variant
-	 * @param string $namespace
-	 * @return string|null
-	 */
-	public function getTranslation($original, $lang, $variant = 0, $namespace = NULL)
+	public function getTranslation(string $original, string $lang, int $variant = 0, ?string $namespace = null): ?string
 	{
 		$changed = $this->tryGetChanged($original, $lang, $variant, $namespace);
-		if (FALSE !== $changed) {
+		if (false !== $changed) {
 			return $changed;
 		}
 
@@ -57,36 +49,35 @@ class File implements \LiveTranslator\ITranslatorStorage
 			while ($translation = fgets($handler)) {
 				if (!empty($prepend)) {
 					$translation = $prepend . $translation;
-					$prepend = NULL;
+					$prepend = null;
 				}
 				if (substr($translation, -4) !== "\";}\n") {
 					$prepend = $translation;
 					continue;
 				}
 
-				$translation = unserialize($translation);
-				if ($original === $translation[0]) {
-					while (!isset($translation[$variant +1])) {
+				$translationUnserialized = @unserialize(rtrim($translation, "\n"));
+				if($translationUnserialized === false)
+				{
+					bdump("Error in translation: '$translation'");
+				}
+				if ($original === $translationUnserialized[0]) {
+					while (!isset($translationUnserialized[$variant +1])) {
 						--$variant;
 						if ($variant < 0) {
-							return NULL;
+							return null;
 						}
 					}
-					return $translation[$variant +1];
+					return $translationUnserialized[$variant +1];
 				}
 			}
 			rewind($handler);
 		}
-		return NULL;
+		return null;
 	}
 
 
-	/**
-	 * @param string $lang
-	 * @param string $namespace
-	 * @return array
-	 */
-	public function getAllTranslations($lang, $namespace = NULL)
+	public function getAllTranslations(string $lang, ?string $namespace = null): array
 	{
 		$handler = $this->getFileHandler($lang, $namespace);
 		rewind($handler);
@@ -95,14 +86,14 @@ class File implements \LiveTranslator\ITranslatorStorage
 		while ($translation = fgets($handler)) {
 			if (!empty($prepend)) {
 				$translation = $prepend . $translation;
-				$prepend = NULL;
+				$prepend = null;
 			}
 			if (substr($translation, -4) !== "\";}\n") {
 				$prepend = $translation;
 				continue;
 			}
 
-			$translation = unserialize($translation);
+			$translation = unserialize(rtrim($translation, "\n"));
 			$translations[array_shift($translation)] = $translation;
 		}
 		return $translations;
@@ -110,28 +101,20 @@ class File implements \LiveTranslator\ITranslatorStorage
 
 
 	/**
-	 * @param string $original
-	 * @param string $translated
-	 * @param string $lang
-	 * @param int $variant
-	 * @param string $namespace
 	 * @return void
 	 */
-	public function setTranslation($original, $translated, $lang, $variant = 0, $namespace = NULL)
+	public function setTranslation(string $original, string $translated, string $lang, int $variant = 0, ?string $namespace = null)
 	{
 		$this->saveTranslation($original, $translated, $lang, $namespace, $variant);
 	}
 
 
 	/**
-	 * @param string $original
-	 * @param string $lang
-	 * @param string $namespace
 	 * @return void
 	 */
-	public function removeTranslation($original, $lang, $namespace = NULL)
+	public function removeTranslation(string $original, string $lang, ?string $namespace = null)
 	{
-		$this->saveTranslation($original, FALSE, $lang, $namespace);
+		$this->saveTranslation($original, false, $lang, $namespace);
 	}
 
 
@@ -146,19 +129,19 @@ class File implements \LiveTranslator\ITranslatorStorage
 				foreach ($data as $i => &$row) {
 					if (!empty($prepend)) {
 						$row = $prepend . $row;
-						$prepend = NULL;
+						$prepend = null;
 					}
 					if (substr($row, -4) !== "\";}\n") {
 						$prepend = $row;
 						continue;
 					}
 
-					$translation = unserialize($row);
+					$translation = unserialize(rtrim($row, "\n"));
 					$index = array_search($translation[0], $originals);
 
-					if (FALSE !== $index) {
+					if (false !== $index) {
 						unset($originals[$index]);
-						if (FALSE === $this->newTranslations[$translation[0]]) {
+						if (false === $this->newTranslations[$translation[0]]) {
 							unset($data[$i]);
 						} else {
 							$translation = $this->newTranslations[$translation[0]] + $translation;
@@ -189,11 +172,9 @@ class File implements \LiveTranslator\ITranslatorStorage
 
 
 	/**
-	 * @param string $lang
-	 * @param string $namespace
 	 * @return resource
 	 */
-	protected function getFileHandler($lang, $namespace = NULL)
+	protected function getFileHandler(string $lang, ?string $namespace = null)
 	{
 		$file = $this->getFilename($lang, $namespace);
 
@@ -213,20 +194,15 @@ class File implements \LiveTranslator\ITranslatorStorage
 	}
 
 
-	/**
-	 * @param string $lang
-	 * @param string $namespace
-	 * @return string
-	 */
-	protected function getFilename($lang, $namespace = NULL)
+	protected function getFilename(string $lang, ?string $namespace = null): string
 	{
-		return $lang . ($namespace === NULL ? '' : ".$namespace");
+		return $lang . ($namespace === null ? '' : ".$namespace");
 	}
 
 
-	private function saveTranslation($original, $new, $lang, $namespace, $variant = NULL)
+	private function saveTranslation($original, $new, $lang, $namespace, $variant = null)
 	{
-		if (FALSE !== $new) {
+		if (false !== $new) {
 			if (isset($this->newTranslations[$original])) {
 				$this->newTranslations[$original][$variant +1] = $new;
 				return;
@@ -246,8 +222,8 @@ class File implements \LiveTranslator\ITranslatorStorage
 
 	/**
 	 * Returns string translation when change found,
-	 * returns NULL when translation removed,
-	 * returns FALSE when change not found.
+	 * returns null when translation removed,
+	 * returns false when change not found.
 	 */
 	private function tryGetChanged($original, $lang, $variant, $namespace)
 	{
@@ -255,10 +231,10 @@ class File implements \LiveTranslator\ITranslatorStorage
 			$meta = serialize(array($lang, $namespace));
 
 			if (!isset($this->metaData[$meta]) || !in_array($original, $this->metaData[$meta])) {
-				return FALSE;
+				return false;
 			}
-			if (FALSE === $this->newTranslations[$original]) {
-				return NULL;
+			if (false === $this->newTranslations[$original]) {
+				return null;
 			}
 
 			$seekVariant = $variant +1;
@@ -273,6 +249,6 @@ class File implements \LiveTranslator\ITranslatorStorage
 				return $this->newTranslations[$original][$seekVariant];
 			}
 		}
-		return FALSE;
+		return false;
 	}
 }

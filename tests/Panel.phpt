@@ -6,7 +6,7 @@ $container = require __DIR__ . '/bootstrap.application.php';
 require __DIR__.'/storage/simple.php';
 
 $trans = new \LiveTranslator\Translator('en', new SimpleStorage, $container->getService('session'), $container->getService('application'));
-$panel = new \LiveTranslator\Panel($trans, $container->getService('httpRequest'));
+$panel = new \LiveTranslator\Panel\Panel($trans, $container->getService('httpRequest'));
 
 Assert::type('LiveTranslator\Translator', $panel->getTranslator());
 $panel->setLayout('horizontal')
