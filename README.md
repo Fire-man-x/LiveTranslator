@@ -14,7 +14,7 @@ LiveTranslator
 LiveTranslator is tool for [Nette Framework](http://nette.org/en/).
 
 LiveTranslator enables simple and user friendly localization of your web, by letting you to translate your texts
-via panel in debug bar. Works with the Nette 2.
+via panel in debug bar. Requires PHP 8.3+ and Nette 3.2+.
 
 *LiveTranslator is forked from [NetteTranslator](https://github.com/straiki/NetteTranslator), uses its robust
 parts (especially [TranslationPanel](http://forum.nette.org/cs/4399-nette-translation-panel-preklady-primo-v-prohlizeci))
@@ -83,16 +83,15 @@ Then add storage into your configuration file as a service.
 
 ### 2. add LiveTranslator and Panel service
 
-Into your config file add two more services `LiveTranslator\Translator` and `LiveTranslator\Panel` and define
+Into your config file add two more services `LiveTranslator\Translator` and `LiveTranslator\Panel\Panel` and define
 the default language (it is language which in your web is written basically):
 ```
-nette:
-	debugger:
-		bar:
-			- LiveTranslator\Panel
+tracy:
+	bar:
+		- LiveTranslator\Panel\Panel
 services:
 	translator: LiveTranslator\Translator(en)
-	translatorPanel: LiveTranslator\Panel
+	translatorPanel: LiveTranslator\Panel\Panel
 ```
 
 
@@ -102,25 +101,19 @@ Inject LiveTranslator, set current language and give translator to template and 
 ```php
 class BasePresenter extends \Nette\Application\UI\Presenter
 {
-	/** @var string @persistent */
-	public $lang = 'en';
+	/** @persistent */
+	public string $lang = 'en';
 
-	/** @var \LiveTranslator\Translator @inject */
-	public $translator;
-
-	// since Nette 2.1 you can omit this method
-	public function injectTranslator(\LiveTranslator\Translator $translator)
-	{
-		$this->translator = $translator;
-	}
+	/** @inject */
+	public \LiveTranslator\Translator $translator;
 
 	public function startup()
 	{
 		parent::startup();
 		$this->translator->setCurrentLang($this->lang);
 	}
-	
-	protected function createTemplate($class = NULL)
+
+	protected function createTemplate(?string $class = null): \Nette\Application\UI\Template
 	{
 		$template = parent::createTemplate($class);
 		$template->setTranslator($this->translator);
@@ -128,7 +121,7 @@ class BasePresenter extends \Nette\Application\UI\Presenter
 	}
 
 	// to have translated even forms add this method too
-	protected function createComponent($name)
+	protected function createComponent(string $name): ?\Nette\ComponentModel\IComponent
 	{
 		$component = parent::createComponent($name);
 		if ($component instanceof \Nette\Forms\Form) {
@@ -182,6 +175,10 @@ That means that `$translator->translate('Call me %s.', 'Johan')` results in "Cal
 
 It can be used in latte too.
 
+`sprintf` is only invoked when the translated text actually contains a real format specifier
+(`%s`, `%d`, `%1$s`, ...). A plain `%` sign in your text (e.g. `"Tax is 21%"`) is left as literal text and never
+breaks the translation, even without any arguments.
+
 
 ### Translate plurals (1 apple → 2 apples)
 
@@ -211,6 +208,19 @@ Panel will separate all texts from another namespaces.
 
 
 And now, enjoy.
+
+
+Running tests
+---
+
+Install dependencies including dev requirements and run the [Nette Tester](https://tester.nette.org/) suite:
+```
+composer install
+vendor/bin/tester -s tests/
+```
+
+(`tests/run-tests.sh` is kept for historical reasons only — it points to a path Nette Tester no longer uses,
+so call `vendor/bin/tester` directly as shown above.)
 
 
 Authors
